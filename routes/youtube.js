@@ -63,4 +63,27 @@ router.post('/create-playlist', auth, async (req, res) => {
   }
 });
 
+// @route   GET api/youtube/search
+// @desc    Search for a track on YouTube Music
+// @access  Private
+router.get('/search', auth, async (req, res) => {
+  try {
+    const { query } = req.query;
+    // TODO: Retrieve user's YouTube access token from database
+    // oauth2Client.setCredentials({ access_token });
+    const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
+    const response = await youtube.search.list({
+      part: 'snippet',
+      q: query,
+      type: 'video',
+      videoCategoryId: '10', // Music category
+      maxResults: 1
+    });
+    res.json(response.data.items);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error searching YouTube Music' });
+  }
+});
+
 module.exports = router;

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const SpotifyWebApi = require('spotify-web-api-node');
+const { getFreshSpotifyToken } = require('../utils/tokenHelper');
 
 const spotifyApi = new SpotifyWebApi({
   clientId: process.env.SPOTIFY_CLIENT_ID,
@@ -24,9 +25,18 @@ router.get('/callback', async (req, res) => {
   const { code } = req.query;
   try {
     const data = await spotifyApi.authorizationCodeGrant(code);
-    const { access_token, refresh_token } = data.body;
-    // TODO: Store tokens in database associated with user
-    res.json({ access_token, refresh_token });
+    const { access_token, refresh_token, expires_in } = data.body;
+    
+    // Store tokens in database
+    const user = await User.findByIdAndUpdate(req.user.id, {
+      spotifyToken: {
+        access_token,
+        refresh_token,
+        expires_at: Date.now() + expires_in * 1000
+      }
+    }, { new: true });
+
+    res.json({ message: 'Spotify authentication successful' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error during Spotify authentication' });
@@ -38,8 +48,8 @@ router.get('/callback', async (req, res) => {
 // @access  Private
 router.get('/playlists', auth, async (req, res) => {
   try {
-    // TODO: Retrieve user's Spotify access token from database
-    // spotifyApi.setAccessToken(access_token);
+    const accessToken = await getFreshSpotifyToken(req.user.id);
+    spotifyApi.setAccessToken(accessToken);
     const data = await spotifyApi.getUserPlaylists();
     res.json(data.body);
   } catch (err) {

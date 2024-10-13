@@ -18,6 +18,16 @@ const UserSchema = new mongoose.Schema({
   date: {
     type: Date,
     default: Date.now
+  },
+  spotifyToken: {
+    access_token: String,
+    refresh_token: String,
+    expires_at: Number
+  },
+  youtubeToken: {
+    access_token: String,
+    refresh_token: String,
+    expires_at: Number
   }
 });
 
