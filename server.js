@@ -6,6 +6,16 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 5001; // Changed from 5000 to 5001
 
+const rateLimit = require('express-rate-limit');
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
+// Apply to all requests
+app.use(apiLimiter);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
